@@ -6,8 +6,9 @@
 
 University of California, San Diego
 
-[![Report](https://img.shields.io/badge/Report-PDF-b31b1b.svg)](report/main.pdf)
+[![Report](https://img.shields.io/badge/Report%20(draft)-PDF-b31b1b.svg)](report/main.pdf)
 [![Phase 1](https://img.shields.io/badge/Phase%201-PDF-b31b1b.svg)](report/phase1.pdf)
+[![tests](https://github.com/Yitang233/agent-rewind/actions/workflows/tests.yml/badge.svg)](https://github.com/Yitang233/agent-rewind/actions/workflows/tests.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.13-3776ab.svg)](environment.yml)
 [![llama.cpp](https://img.shields.io/badge/llama.cpp-Metal-555555.svg)](https://github.com/abetlen/llama-cpp-python)
@@ -123,7 +124,7 @@ All state lives in one versioned tree:
 | `/msg` | messages between agents |
 | `/kv` | shared state |
 | `/fs` | files, backed by a git workspace |
-| `/world` | tool results, keyed by intent |
+| `/world` | reserved for tool results (today these are tracked as intents by the effect layer, not as namespace reads) |
 | `/audit` | audit verdicts |
 
 A read is recorded as `(cut(p, d), hash(cut(p, d)))`. Because the hashes are
@@ -191,9 +192,10 @@ conda env create -f environment.yml
 conda activate agent-rewind
 ```
 
-The core engine and every scripted experiment use only the Python standard
-library. The `llm` extra adds `llama-cpp-python` and `huggingface_hub`; the
-`plot` extra adds `matplotlib`.
+The core engine and the scripted experiments use only the Python standard
+library, except that speculative replay (`replay.py`) and its tests need
+`numpy`. The `llm` extra adds `llama-cpp-python`, `huggingface_hub` and `numpy`;
+the `plot` extra adds `matplotlib`.
 
 **Models.** These are needed only for real-model experiments.
 
@@ -203,11 +205,19 @@ library. The `llm` extra adds `llama-cpp-python` and `huggingface_hub`; the
 | `1.5b` | [`Qwen/Qwen2.5-1.5B-Instruct-GGUF`](https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF) | `qwen2.5-1.5b-instruct-q4_k_m.gguf` |
 
 Register the downloaded files in `runs/env.json` (not tracked), using absolute
-paths:
+paths and each file's SHA-256 (`shasum -a 256 FILE`), which keys the call cache.
+The tests and `scripts/` read both fields:
 
 ```json
-{"models": {"7b":   {"path": "/abs/path/Qwen2.5-7B-Instruct-Q4_K_M.gguf"},
-            "1.5b": {"path": "/abs/path/qwen2.5-1.5b-instruct-q4_k_m.gguf"}}}
+{"models": {"7b":   {"path": "/abs/path/Qwen2.5-7B-Instruct-Q4_K_M.gguf", "sha256": "<sha256 of the file>"},
+            "1.5b": {"path": "/abs/path/qwen2.5-1.5b-instruct-q4_k_m.gguf", "sha256": "<sha256 of the file>"}}}
+```
+
+**TAMAS data.** W4 reads its scenarios from a local clone of TAMAS. Without it,
+the W4 tests are skipped and any grid that includes `w4.*` fails:
+
+```bash
+git clone https://github.com/microsoft/TAMAS.git ~/src/TAMAS   # or set TAMAS_DIR=/your/path
 ```
 
 To check speed, logit access and KV-cache cropping on a new machine, run:
@@ -239,8 +249,10 @@ python -m unittest -q
 ## 4. Reproducing the Results
 
 Each experiment is a grid of *cells* defined in `bench/configs/`. Cells are
-appended to `runs/<out>/cells.jsonl`, and finished cells are skipped when a run
-resumes.
+appended to `runs/<config name>/cells.jsonl` (for example
+`runs/phase1_baselines/cells.jsonl`), and finished cells are skipped when a run
+resumes. `scripts/analyze.py` reads these three files and warns about any that
+are missing.
 
 | Step | Command | Produces | Time (M5 Pro) |
 |---|---|---|---|
@@ -248,10 +260,11 @@ resumes.
 | Phase 1 baselines | `python -m agent_rewind.bench --config bench/configs/phase1_baselines.json` | 112 cells | minutes |
 | Full grid (E5–E8, 7B) | `caffeinate -i python -m agent_rewind.bench --config bench/configs/full.json --resume --max-hours 8` | 540 cells | ≈ 2.8 h |
 | Figures and tables | `python scripts/analyze.py` | `runs/figures/` | seconds |
-| Final report | `cd report && tectonic main.tex` | `report/main.pdf` | seconds |
+| Final report (draft) | `cd report && tectonic main.tex` | `report/main.pdf` | seconds |
 | Phase 1 report | `cd report && tectonic phase1.tex` | `report/phase1.pdf` | seconds |
 
-Add `--dry-run` to any grid command to list its cells without running them.
+Add `--dry-run` to any grid command to run every cell with the scripted model
+into `runs/<name>_dry/`. It needs no model and is a quick check that a config is valid.
 
 | Experiment | Workloads | Varies | Reported as |
 |---|---|---|---|

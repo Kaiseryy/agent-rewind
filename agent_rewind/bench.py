@@ -212,7 +212,7 @@ class Models:
         if busy:
             raise RuntimeError("another model process is running: " + busy[0])
         from .llm import LlamaCppLLM
-        self.inner = LlamaCppLLM(env["path"], model_sha=env["sha256"], n_ctx=4096,
+        self.inner = LlamaCppLLM(env["path"], model_sha=env.get("sha256"), n_ctx=4096,
                                  cache_path=os.path.join(self.out_dir, f"cache_{name}.sqlite"))
         self.name = name
 

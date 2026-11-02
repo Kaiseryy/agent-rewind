@@ -57,11 +57,12 @@ external sites, which are irreversible.
 \paragraph{Model and platform.} Qwen2.5-7B-Instruct (Q4\_K\_M) runs in-process
 through \texttt{llama-cpp-python} on one Apple M5 Pro laptop (24\,GB), with
 greedy decoding and JSON-constrained output. A scripted model runs the same
-workflows for fast checks. Each configuration has 3 repeats, which are
-scenario variants. 1{,}675 cells ran with zero errors.
+workflows for fast checks. The propagation grid (E1) has 3 repeats per
+configuration, which are scenario variants; the scripted W2 grids have 5, and
+each baseline cell has 1. 1{,}675 cells ran with zero errors.
 
 \paragraph{Traces.} Every step reads and writes one versioned namespace:
-messages, shared state, files and tool results. A step records (i)~the
+messages, shared state and files. A step records (i)~the
 messages and artifacts it wrote, (ii)~its tool actions with their effect class
 (\texttt{read}, \texttt{compensable}, \texttt{irreversible}), (iii)~its cost
 (LLM calls, tokens, wall time), and (iv)~its \emph{dependencies}: the ordered
@@ -187,8 +188,12 @@ e-mail. (2)~Always-verify adds 51--156\% of a clean run's tokens on
 \emph{every} run, faulty or not. It still misses one third of W3 faults and a
 quarter of W4.byz faults, and it raises false flags on clean steps.
 (3)~$^\dagger$Restart did not reproduce the clean W3 outcome in any 7B run, even
-though clean W3 succeeds 3/3. We are investigating whether the restarted run
-differs from the clean run in prompt or workspace state.
+though clean W3 succeeds 3/3. A likely cause is in our harness, not the method:
+the W3 test runner could execute Python's cached bytecode of the buggy file.
+A one-character fix keeps the file's size, and the cache check compares only
+size and a 1\,s modification time, so a rerun that rewrites the file within a
+second of the last test run is scored against the old code. The runner now
+disables the cache; the W3 baseline cells will be rerun to confirm.
 
 \paragraph{Limitations.} Timeout faults are covered only in a scripted
 single-meeting version of W1, where a missing team size changes the outcome and
@@ -240,7 +245,7 @@ Dec 10 & Submit Phase 2 code and the final report & 4--6 page report \\
 \end{center}
 
 \paragraph{Open items carried into Phase 2.} Add timeout faults to the 7B grid;
-explain the W3 restart result; add the precision-versus-bookkeeping
+rerun the W3 restart cells with the cache fix; add the precision-versus-bookkeeping
 measurement (dependency granularity) that the brief asks for.
 
 \paragraph{Acknowledgments.} Phase 1 progress report for the CSE 291A
