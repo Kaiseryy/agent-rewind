@@ -223,8 +223,13 @@ git clone https://github.com/microsoft/TAMAS.git ~/src/TAMAS   # or set TAMAS_DI
 To check speed, logit access and KV-cache cropping on a new machine, run:
 
 ```bash
-python scripts/bench_llm.py --model /abs/path/Qwen2.5-7B-Instruct-Q4_K_M.gguf
+python scripts/bench_llm.py --model /abs/path/Qwen2.5-7B-Instruct-Q4_K_M.gguf --out runs/bench_7b.json
 ```
+
+`tests/test_env.py` also expects these benchmark fields (`prefill_tps`,
+`decode_tps`, `verify_ms_64`, `equiv_rate`, `kv_crop_ok`, `peak_rss_mb`) in each
+model's `runs/env.json` entry. Copy them over from the `--out` file (keep the
+absolute `path`), or that test fails.
 
 ---
 
