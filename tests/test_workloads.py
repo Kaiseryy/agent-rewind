@@ -1,5 +1,7 @@
 import tempfile
 import unittest
+import os
+import py_compile
 
 from agent_rewind.engine import execute, producers
 from agent_rewind.llm import ATOM_TASKS, CachedLLM
@@ -17,6 +19,19 @@ def faulty_then_recover(case, fault, effects="diff"):
 
 
 class CodefixTest(unittest.TestCase):
+    def test_check_ignores_stale_bytecode_after_same_size_edit(self):
+        c = codefix.make(1)
+        try:
+            path = os.path.join(c.world.dir, codefix.CODE_FILE)
+            stamp = int(os.stat(path).st_mtime)
+            py_compile.compile(path, doraise=True)
+            self.assertTrue(c.world.call("fs.write", file=codefix.CODE_FILE,
+                                         old="return price + qty", new="return price * qty"))
+            os.utime(path, (stamp, stamp))
+            self.assertTrue(c.world.run_tests()["passed"])
+        finally:
+            c.close()
+
     def test_clean_run_passes_for_every_variant(self):
         for v in range(5):
             c = codefix.make(v)
