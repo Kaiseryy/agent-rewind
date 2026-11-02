@@ -212,7 +212,10 @@ class CodeWorld(World):
 
     def run_tests(self) -> dict:
         try:
-            p = subprocess.run([sys.executable, "-m", "unittest", "discover", "-s", ".", "-p", "test_*.py"],
+            # The fix may preserve file size and happen within the same timestamp
+            # second. Stale timestamp-based bytecode can otherwise mask the edit.
+            shutil.rmtree(os.path.join(self.dir, "__pycache__"), ignore_errors=True)
+            p = subprocess.run([sys.executable, "-B", "-m", "unittest", "discover", "-s", ".", "-p", "test_*.py"],
                                cwd=self.dir, capture_output=True, text=True, timeout=30)
             return {"passed": p.returncode == 0, "tail": (p.stderr or p.stdout)[-160:]}
         except subprocess.TimeoutExpired:
