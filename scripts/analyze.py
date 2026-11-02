@@ -600,14 +600,20 @@ def main():
     p1, p1b, full = load(P1), load(P1B), load(FULL)
     print(f"cells: phase1={len(p1)} baselines={len(p1b)} full={len(full)}")
     OUT.mkdir(parents=True, exist_ok=True)
-    fig1(p1)
-    fig2(p1)
-    fig3(p1)
-    f4 = fig4(full)
-    fig5(full, f4)
-    table1(full, p1)
-    table2(full)
-    anomalies(p1, p1b, full)
+    # Each step needs its source grid; skip it rather than crash on a partial runs/.
+    if p1:
+        fig1(p1)
+        fig2(p1)
+        fig3(p1)
+    if full:
+        f4 = fig4(full)
+        fig5(full, f4)
+        table2(full)
+    if full and p1:
+        table1(full, p1)
+        anomalies(p1, p1b, full)
+    if not (p1 and full):
+        print("skipped figures/tables whose grid is missing; analysis.json is partial")
     (OUT / "analysis.json").write_text(json.dumps(A, indent=1, default=lambda o: None if (isinstance(o, float) and math.isinf(o)) else str(o)))
     print("wrote", OUT)
 
