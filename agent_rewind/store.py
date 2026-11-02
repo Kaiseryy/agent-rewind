@@ -135,7 +135,8 @@ class View:
         if path in self.leaves:
             h = digest("L" + canon(self.leaves[path]))
         elif self.kids.get(path):
-            h = digest("N" + "|".join(f"{n}:{self.hash(self._child(path, n))}" for n in sorted(self.kids[path])))
+            children = [(n, self.hash(self._child(path, n))) for n in sorted(self.kids[path])]
+            h = digest("N" + canon([self.kind.get(path, "o"), children]))
         else:
             return BOT
         self._h[path] = h
@@ -235,6 +236,9 @@ class Store:
 
         def walk(path: str) -> None:
             if va.hash(path) == vb.hash(path):
+                return
+            if va.kind.get(path) != vb.kind.get(path):
+                out.append(path)
                 return
             kids = va.kids.get(path, set()) | vb.kids.get(path, set())
             if (path in va.leaves or path in vb.leaves or not kids):
