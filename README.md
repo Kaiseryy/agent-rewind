@@ -35,9 +35,11 @@ all follow from that single rule. The same provenance also decides which
 *tokens* a rerun must re-decode (speculative replay against the step's old
 output) and which *audits* must be redone.
 
-We evaluate on four workloads with a local 7B model (2,215 measured cells):
+We evaluate four workloads across 2,215 measured cells, including scripted
+experiments and local Qwen2.5-7B model runs:
 - Selective recovery reruns 5.0 of 24 steps, where restart reruns 22.5.
-- It halves recovery time on the booking workflow (16.1 s vs 32.4 s).
+- It reduces measured recovery time on the booking workflow (16.1 s vs 32.4 s);
+  the compared free-output runs did not pass the clean task check (see Limitations).
 - An intent-diff effect layer cuts re-sent irreversible calls from 3.0 to 0.33
   per recovery.
 - Replay decodes 9–65% of a plain rerun's tokens, but does not reliably save
@@ -78,8 +80,9 @@ is kept separate from recovery: every recovery method is told which result is
 faulty, and automated detectors (audits) are scored on their own.
 
 The *cone* of a fault is every step that read the faulty value, directly or
-indirectly. A correct recovery must recompute the cone, and should recompute
-nothing else.
+indirectly. Recovery must revisit the faulty step and invalidate results whose recorded
+inputs no longer match. If a recomputed value is unchanged, early cutoff can
+allow later steps in the potential dependency cone to be reused.
 
 ```mermaid
 flowchart LR
@@ -355,6 +358,9 @@ Experiment output (`runs/`) is not tracked.
 
 ## 7. Limitations
 
+- **Hash format change on this branch.** Inner-node hashes now include the node
+  type. Traces recorded with an earlier version should be regenerated before
+  reuse; published results have not yet been rerun with this change.
 - **Style confound on W1.** Free chain-of-thought fails W1 without any fault
   (0/5), so W1 correctness compares output styles, not methods.
 - **Replay equivalence is empirical.** Replayed output matched plain greedy
