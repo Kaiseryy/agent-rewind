@@ -166,7 +166,7 @@ def fig1(p1):
     for m in meths:
         x = [r["recovery"]["n_rerun"] for r in E2 if r["spec"]["label"] == m]
         red[m] = ms(x)[:2]
-    ratio = [r["recovery"]["n_rerun"] / len(r["propagation"]["cone"] or [0]) if r["propagation"]["cone"] else None
+    ratio = [r["recovery"]["n_rerun"] / (len(r["propagation"]["cone"]) + 1) if r["propagation"]["cone"] else None
              for r in sel]
     A["fig1"] = {"path": path, "cells_selective": len(sel), "rerun_not_subset_of_cone": viol,
                  "of_which_steps_not_in_faulty_run": ctl, "of_which_steps_that_ran_in_faulty_run": genuine, "genuine_by_kind[n,viol]": dict(brk),

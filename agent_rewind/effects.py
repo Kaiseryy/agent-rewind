@@ -123,7 +123,7 @@ class Ledger:
             old = ctx.prior.get(key)
             if old is not None:
                 ctx.prior_used.add(key)
-                new = replace(old, held=False)
+                new = replace(old, held=False, untrusted=ctx.tainted)
                 ctx.intents.append(new)
                 ctx.local[key] = new
                 self.stats["retained"] += 1
