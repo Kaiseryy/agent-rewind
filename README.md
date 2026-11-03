@@ -352,11 +352,13 @@ agent-rewind/
 │   ├── replay.py       M1 speculative replay with near-tie re-verification
 │   ├── atoms.py        M2 atom schema, parser, canonical order
 │   ├── audit.py        M3 scoped and cached audits, M4 placement
-│   ├── world.py        simulated tools with effect classes, git workspace
+│   ├── world.py        simulated tools with effect classes
 │   ├── faults.py       wrong / stale / timeout / malicious faults
-│   ├── workloads/      booking (W1), dag (W2), codefix (W3), tamas (W4)
+│   ├── workloads/      booking (W1), dag (W2), codefix (W3, git workspace), tamas (W4)
 │   ├── bench.py        experiment grid runner
-│   └── demo.py         single-workflow demonstration
+│   ├── experiment.py   propagation and policy comparison used by the demo
+│   ├── demo.py         single-workflow demonstration
+│   └── recovery.py, workflow.py, trace.py   compatibility layer from the first prototype
 ├── bench/configs/      experiment grids: phase1, phase1_baselines, full
 ├── scripts/            analyze.py, bench_llm.py, replay_check.py, audit_check.py, ...
 ├── tests/              unit, property, replay-equivalence and audit-cache tests
