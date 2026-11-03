@@ -282,6 +282,8 @@ def execute(workflow, world: World, llm, prior: Run | None = None, dirty=(), pol
     elif policy == "rollback" and dirty:
         first = min(i for i, n in enumerate(names) if n in dirty)
         dirty = set(names[first:])
+    if prior is not None and effects == "naive" and policy in ("restart", "rollback"):
+        ledger.undo(r for r in prior.records if r.step in dirty)   # undo first, then redo
 
     def audited(rec: StepRecord) -> None:
         if audit is not None:
